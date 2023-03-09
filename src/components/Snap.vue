@@ -1,5 +1,6 @@
 <template>
     <div
+        @mousewheel="onMouseWheel"
         style="
             width: 800px;
             height: 800px;
@@ -17,6 +18,7 @@ import { onMounted } from 'vue'
 import { DagreLayout } from '@antv/layout'
 
 let s = null
+let g = null
 
 onMounted(() => {
     s = Snap('#svg')
@@ -132,7 +134,7 @@ onMounted(() => {
         if (dagreLayout.nodes && dagreLayout.nodes.length !== 0) {
             console.log(dagreLayout)
 
-            let g = s.g()
+            g = s.g()
 
             dagreLayout.nodes.forEach((node) => {
                 let d = s.rect(node.x, node.y, 100, 50, 10).attr({
@@ -193,6 +195,24 @@ onMounted(() => {
 
     dagreLayout.layout(data)
 })
+
+let scale = 1
+let scaleSize = 0.1
+const onMouseWheel = (evt) => {
+    console.log(evt.deltaY)
+
+    scale = scale + (evt.deltaY < 0 ? scaleSize : -scaleSize)
+
+    g.attr({
+        transform: 'S' + scale,
+    })
+
+    /* var m = new Snap.Matrix()
+    var scale = scale + evt.deltaY < 0 ? scaleSize : -scaleSize
+    m.scale(scale, scale)
+
+    g.transform(m) */
+}
 </script>
 
 <style>
