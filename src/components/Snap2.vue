@@ -9,7 +9,7 @@
             overflow: hidden;
         "
     >
-        <svg id="svg" width="8800" height="8800"></svg>
+        <svg id="svg1" width="8800" height="8800"></svg>
     </div>
 </template>
 
@@ -19,6 +19,7 @@ import { DagreLayout } from '@antv/layout'
 
 let s = null
 let g = null
+let nodes = {}
 
 Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
     function dragStart(x, y, e) {
@@ -91,6 +92,36 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
             .path(this.getPathString(obj, 'st'))
             .attr({ fill: 'none', stroke: 'green', strokeWidth: 1 })
         // path.prependTo(this.paper)
+
+        path.hover(
+            function () {
+                this.animate(
+                    {
+                        strokeWidth: 2,
+                    },
+                    300
+                )
+            },
+            function () {
+                this.animate(
+                    {
+                        strokeWidth: 1,
+                    },
+                    300
+                )
+            }
+        )
+
+        let title = Snap.parse(
+            `<title>${this.nodeData.name + ' -> ' + obj.nodeData.name}</title>`
+        )
+
+        path.append(title)
+
+        path.dblclick(() => {
+            console.log(this.nodeData, obj.nodeData)
+        })
+
         g.add(path)
 
         this.paths[id] = [path, obj, 'st']
@@ -109,8 +140,16 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         }
     }
 
-    Paper.prototype.draggableRect = function (x, y, w, h) {
-        var rect = this.rect(0, 0, w, h).transform('T' + x + ',' + y)
+    Paper.prototype.childRect = function (x, y, w, h, r, node) {
+        let rect = this.rect(0, 0, w, h, r).transform('T' + x + ',' + y)
+        let text = this.text(100, 32, node.name)
+            .transform('T' + x + ',' + y)
+            .attr({
+                width: 196,
+                cursor: 'default',
+                'text-anchor': 'middle',
+            })
+
         rect.paths = {}
         rect.drag(dragMove, dragStart, dragEnd)
         rect.updatePaths = updatePaths
@@ -119,147 +158,126 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         rect.addPath = addPath
         rect.removePath = removePath
 
+        rect.text = text
+        rect.nodeData = node
+
+        text.drag(dragMove.bind(rect), dragStart.bind(rect), dragEnd.bind(rect))
+
+        rect.mousedown((evt) => {
+            evt.stopPropagation()
+        })
+
+        text.mousedown((evt) => {
+            evt.stopPropagation()
+        })
+
+        g.add(rect)
+        g.add(text)
+
         return rect
     }
 })
-
-function drawLineArrow(x1, y1, x2, y2) {
-    var path
-    var slopy, cosy, siny
-    var Par = 10.0
-    var x3, y3
-    slopy = Math.atan2(y1 - y2, x1 - x2)
-    cosy = Math.cos(slopy)
-    siny = Math.sin(slopy)
-    path = 'M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2
-    x3 = x2 // Number(x1) + Number(x2)
-    y3 = y2 // Number(y1) + Number(y2)
-    path += ' M' + x3 + ',' + y3
-    path +=
-        ' L' +
-        (Number(x3) + Number(Par * cosy - (Par / 2.0) * siny)) +
-        ',' +
-        (Number(y3) + Number(Par * siny + (Par / 2.0) * cosy))
-    path +=
-        ' M' +
-        (Number(x3) +
-            Number(Par * cosy + (Par / 2.0) * siny) +
-            ',' +
-            (Number(y3) - Number((Par / 2.0) * cosy - Par * siny)))
-    path += ' L' + x3 + ',' + y3
-    return path
-}
-
-function wrap(text, maxWidth) {
-    var textLength = text.node().getComputedTextLength(),
-        text = text.text()
-    while (textLength > maxWidth && text.length > 0) {
-        text = text.slice(0, -1)
-        self.text(text + '...')
-        textLength = self.node().getComputedTextLength()
-    }
-}
 
 let data = {
     nodes: [
         {
             id: '100',
             name: 'left_1',
+            children: [
+                { id: '100-1', name: 'left_1-1' },
+                { id: '100-2', name: 'left_1-2' },
+                { id: '100-3', name: 'left_1-3' },
+                { id: '100-4', name: 'left_1-4' },
+                { id: '100-5', name: 'left_1-5' },
+            ],
         },
         {
             id: '101',
             name: 'left_2',
-        },
-        {
-            id: '102',
-            name: 'left_3',
-        },
-        {
-            id: '103',
-            name: 'left_4',
+            children: [
+                { id: '101-1', name: 'left_2-1' },
+                { id: '101-2', name: 'left_2-2' },
+                { id: '101-3', name: 'left_2-3' },
+                { id: '101-4', name: 'left_2-4' },
+                { id: '101-5', name: 'left_2-5' },
+            ],
         },
 
         {
             id: '0',
             name: 'center_1',
+            children: [
+                { id: '0-1', name: 'center_1-1' },
+                { id: '0-2', name: 'center_1-2' },
+                { id: '0-3', name: 'center_1-3' },
+                { id: '0-4', name: 'center_1-4' },
+                { id: '0-5', name: 'center_1-5' },
+            ],
         },
 
         {
             id: '1',
             name: 'right_1',
+            children: [
+                { id: '1-1', name: 'right_1-1' },
+                { id: '1-2', name: 'right_1-2' },
+                { id: '1-3', name: 'right_1-3' },
+                { id: '1-4', name: 'right_1-4' },
+                { id: '1-5', name: 'right_1-5' },
+            ],
         },
         {
             id: '2',
             name: 'right_2',
-        },
-        {
-            id: '3',
-            name: 'right_3',
-        },
-
-        {
-            id: '4',
-            name: 'right_4',
+            children: [
+                { id: '2-1', name: 'right_2-1' },
+                { id: '2-2', name: 'right_2-2' },
+                { id: '2-3', name: 'right_2-3' },
+                { id: '2-4', name: 'right_2-4' },
+                { id: '2-5', name: 'right_2-5' },
+            ],
         },
     ],
     edges: [
         {
             source: '100',
             target: '0',
+            relations: [
+                { from: '100-1', to: '0-1' },
+                { from: '100-2', to: '0-2' },
+            ],
         },
+
         {
             source: '101',
             target: '0',
+            relations: [
+                { from: '101-4', to: '0-4' },
+                { from: '101-5', to: '0-5' },
+            ],
         },
-        {
-            source: '102',
-            target: '0',
-        },
-        {
-            source: '103',
-            target: '0',
-        },
-        {
-            source: '103',
-            target: '102',
-        },
+
         {
             source: '0',
             target: '1',
+            relations: [
+                { from: '0-1', to: '1-1' },
+                { from: '0-2', to: '1-2' },
+            ],
         },
         {
             source: '0',
             target: '2',
-        },
-        {
-            source: '0',
-            target: '3',
-        },
-        {
-            source: '0',
-            target: '4',
-        },
-        {
-            source: '4',
-            target: '3',
-        },
-
-        {
-            source: '3',
-            target: '100',
-        },
-
-        {
-            source: '2',
-            target: '4',
+            relations: [
+                { from: '0-4', to: '2-4' },
+                { from: '0-5', to: '2-5' },
+            ],
         },
     ],
 }
 
-let nodes = {}
-
 onMounted(() => {
-    s = Snap('#svg')
+    s = Snap('#svg1')
 
     const dagreLayout = new DagreLayout({
         type: 'dagre',
@@ -268,7 +286,7 @@ onMounted(() => {
         nodesep: 50,
         controlPoints: true,
         nodesepFunc: (d) => {
-            return 10
+            return d.children.length * 30
         },
     })
 
@@ -277,26 +295,8 @@ onMounted(() => {
             g = s.g().drag()
 
             dagreLayout.nodes.forEach((node) => {
-                let rect = s.draggableRect(node.x, node.y, 100, 50, 10).attr({
+                let rect = s.childRect(node.x, node.y, 200, 50, 0, node).attr({
                     fill: '#00ffff',
-                })
-
-                let text = s.text(node.x + 50, node.y + 32, node.name).attr({
-                    width: 96,
-                    'text-anchor': 'middle',
-                })
-
-                rect.text = text
-
-                g.add(rect)
-                g.add(text)
-
-                rect.mousedown((evt) => {
-                    evt.stopPropagation()
-                })
-
-                text.mousedown((evt) => {
-                    evt.stopPropagation()
                 })
 
                 nodes[node.id] = {
@@ -305,12 +305,7 @@ onMounted(() => {
                 }
             })
 
-            dagreLayout.edges.forEach((edge) => {
-                let sNode = nodes[edge.source]
-                let tNode = nodes[edge.target]
-
-                sNode.rect.addPath(tNode.rect)
-            })
+            dagreLayout.edges.forEach((edge) => {})
 
             let isdown = false
             let startX = 0
