@@ -91,6 +91,36 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
             .path(this.getPathString(obj, 'st'))
             .attr({ fill: 'none', stroke: 'green', strokeWidth: 1 })
         // path.prependTo(this.paper)
+
+        path.hover(
+            function () {
+                this.animate(
+                    {
+                        strokeWidth: 2,
+                    },
+                    300
+                )
+            },
+            function () {
+                this.animate(
+                    {
+                        strokeWidth: 1,
+                    },
+                    300
+                )
+            }
+        )
+
+        let title = Snap.parse(
+            `<title>${this.nodeData.name + ' -> ' + obj.nodeData.name}</title>`
+        )
+
+        path.append(title)
+
+        path.dblclick(() => {
+            console.log(this.nodeData, obj.nodeData)
+        })
+
         g.add(path)
 
         this.paths[id] = [path, obj, 'st']
@@ -128,6 +158,7 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         rect.removePath = removePath
 
         rect.text = text
+        rect.nodeData = node
 
         text.drag(dragMove.bind(rect), dragStart.bind(rect), dragEnd.bind(rect))
 
