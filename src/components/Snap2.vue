@@ -23,24 +23,31 @@ let g = null
 Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
     function dragStart(x, y, e) {
         this.current_transform = this.transform()
+        this.text.current_transform = this.text.transform()
     }
 
     function dragMove(dx, dy, x, y, e) {
         this.transform(this.current_transform + 'T' + dx + ',' + dy)
+        this.text.transform(this.text.current_transform + 'T' + dx + ',' + dy)
         this.updatePaths()
     }
 
     function dragEnd(e) {
         this.current_transform = this.transform()
+        this.text.current_transform = this.text.transform()
     }
 
     function updatePaths() {
         var key
         for (key in this.paths) {
             this.paths[key][0].attr({
-                path: this.getPathString(this.paths[key][1]),
+                path: this.getPathString(
+                    this.paths[key][1],
+                    this.paths[key][2]
+                ),
             })
-            this.paths[key][0].prependTo(this.paper)
+
+            //this.paths[key][0].prependTo(this.paper)
         }
     }
 
@@ -51,20 +58,43 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         ]
     }
 
-    function getPathString(obj) {
+    function getPathString(obj, direction) {
         var p1 = this.getCoordinates()
         var p2 = obj.getCoordinates()
-        return 'M' + p1[0] + ',' + p1[1] + 'L' + p2[0] + ',' + p2[1]
+
+        if (direction === 'ts') {
+            ;[p1, p2] = [p2, p1]
+        }
+
+        if (p1[0] > p2[0] + 100) {
+            p1[0] -= 50
+            p2[0] += 50
+        } else if (p1[0] + 100 < p2[0]) {
+            p1[0] += 50
+            p2[0] -= 50
+        } else {
+            if (p1[1] > p2[1]) {
+                p1[1] -= 25
+                p2[1] += 25
+            } else {
+                p1[1] += 25
+                p2[1] -= 25
+            }
+        }
+
+        return drawLineArrow(p1[0], p1[1], p2[0], p2[1])
     }
 
     function addPath(obj) {
         var id = obj.id
         var path = this.paper
-            .path(this.getPathString(obj))
-            .attr({ fill: 'none', stroke: 'blue', strokeWidth: 1 })
-        path.prependTo(this.paper)
-        this.paths[id] = [path, obj]
-        obj.paths[this.id] = [path, this]
+            .path(this.getPathString(obj, 'st'))
+            .attr({ fill: 'none', stroke: 'green', strokeWidth: 1 })
+        // path.prependTo(this.paper)
+        g.add(path)
+
+        this.paths[id] = [path, obj, 'st']
+        obj.paths[this.id] = [path, this, 'ts']
     }
 
     function removePath(obj) {
@@ -92,6 +122,43 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         return rect
     }
 })
+
+function drawLineArrow(x1, y1, x2, y2) {
+    var path
+    var slopy, cosy, siny
+    var Par = 10.0
+    var x3, y3
+    slopy = Math.atan2(y1 - y2, x1 - x2)
+    cosy = Math.cos(slopy)
+    siny = Math.sin(slopy)
+    path = 'M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2
+    x3 = x2 // Number(x1) + Number(x2)
+    y3 = y2 // Number(y1) + Number(y2)
+    path += ' M' + x3 + ',' + y3
+    path +=
+        ' L' +
+        (Number(x3) + Number(Par * cosy - (Par / 2.0) * siny)) +
+        ',' +
+        (Number(y3) + Number(Par * siny + (Par / 2.0) * cosy))
+    path +=
+        ' M' +
+        (Number(x3) +
+            Number(Par * cosy + (Par / 2.0) * siny) +
+            ',' +
+            (Number(y3) - Number((Par / 2.0) * cosy - Par * siny)))
+    path += ' L' + x3 + ',' + y3
+    return path
+}
+
+function wrap(text, maxWidth) {
+    var textLength = text.node().getComputedTextLength(),
+        text = text.text()
+    while (textLength > maxWidth && text.length > 0) {
+        text = text.slice(0, -1)
+        self.text(text + '...')
+        textLength = self.node().getComputedTextLength()
+    }
+}
 
 let data = {
     nodes: [
@@ -189,6 +256,8 @@ let data = {
     ],
 }
 
+let nodes = {}
+
 onMounted(() => {
     s = Snap('#svg')
 
@@ -212,11 +281,35 @@ onMounted(() => {
                     fill: '#00ffff',
                 })
 
+                let text = s.text(node.x + 50, node.y + 32, node.name).attr({
+                    width: 96,
+                    'text-anchor': 'middle',
+                })
+
+                rect.text = text
+
                 g.add(rect)
+                g.add(text)
 
                 rect.mousedown((evt) => {
                     evt.stopPropagation()
                 })
+
+                text.mousedown((evt) => {
+                    evt.stopPropagation()
+                })
+
+                nodes[node.id] = {
+                    data: node,
+                    rect: rect,
+                }
+            })
+
+            dagreLayout.edges.forEach((edge) => {
+                let sNode = nodes[edge.source]
+                let tNode = nodes[edge.target]
+
+                sNode.rect.addPath(tNode.rect)
             })
 
             let isdown = false
@@ -241,10 +334,6 @@ onMounted(() => {
 
                 let disX = evt.x - startX
                 let disY = evt.y - startY
-
-                /* var m = new Snap.Matrix()
-                m.translate(disX + distanX, disY + distanY)
-                g.transform(m) */
 
                 g.transform(moveTransform + 'T' + disX + ',' + disY)
             })
