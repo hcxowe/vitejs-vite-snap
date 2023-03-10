@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /* import HelloWorld from './components/HelloWorld.vue' */
-import Snap from './components/Snap2.vue'
+import Snap from './components/Snap3.vue'
 </script>
 
 <template>
