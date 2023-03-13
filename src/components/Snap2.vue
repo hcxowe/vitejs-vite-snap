@@ -50,10 +50,54 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
     }
 
     function getCoordinates() {
-        return [
-            this.matrix.e + this.node.width.baseVal.value / 2,
-            this.matrix.f + this.node.height.baseVal.value / 2,
-        ]
+        let group = this.group
+        let index = this.index
+
+        return [group.matrix.e, group.matrix.f + 50 + 30 * index + 15]
+    }
+
+    function drawLineArrow(x1, y1, x2, y2) {
+        var path
+        var slopy, cosy, siny
+        var Par = 10.0
+        var x3, y3
+        slopy = Math.atan2(0, x1 > x2 ? 10 : -10)
+        cosy = Math.cos(slopy)
+        siny = Math.sin(slopy)
+        //path = 'M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2
+        path =
+            'M' +
+            x1 +
+            ',' +
+            y1 +
+            ' L' +
+            (x1 - 10) +
+            ', ' +
+            y1 +
+            ' L' +
+            (x2 + 10) +
+            ',' +
+            y2 +
+            ' L' +
+            x2 +
+            ',' +
+            y2
+        x3 = x2 // Number(x1) + Number(x2)
+        y3 = y2 // Number(y1) + Number(y2)
+        path += ' M' + x3 + ',' + y3
+        path +=
+            ' L' +
+            (Number(x3) + Number(Par * cosy - (Par / 2.0) * siny)) +
+            ',' +
+            (Number(y3) + Number(Par * siny + (Par / 2.0) * cosy))
+        path +=
+            ' M' +
+            (Number(x3) +
+                Number(Par * cosy + (Par / 2.0) * siny) +
+                ',' +
+                (Number(y3) - Number((Par / 2.0) * cosy - Par * siny)))
+        path += ' L' + x3 + ',' + y3
+        return path
     }
 
     function getPathString(obj, direction) {
@@ -64,20 +108,10 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
             ;[p1, p2] = [p2, p1]
         }
 
-        if (p1[0] > p2[0] + 100) {
-            p1[0] -= 50
-            p2[0] += 50
-        } else if (p1[0] + 100 < p2[0]) {
-            p1[0] += 50
-            p2[0] -= 50
-        } else {
-            if (p1[1] > p2[1]) {
-                p1[1] -= 25
-                p2[1] += 25
-            } else {
-                p1[1] += 25
-                p2[1] -= 25
-            }
+        if (p1[0] > p2[0]) {
+            p2[0] += 200
+        } else if (p1[0] < p2[0]) {
+            p1[0] += 200
         }
 
         return drawLineArrow(p1[0], p1[1], p2[0], p2[1])
@@ -88,7 +122,6 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         var path = this.paper
             .path(this.getPathString(obj, 'st'))
             .attr({ fill: 'none', stroke: 'green', strokeWidth: 1 })
-        // path.prependTo(this.paper)
 
         path.hover(
             function () {
@@ -186,14 +219,16 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
             })
 
             childRect.paths = {}
-            childRect.updatePaths = updatePaths
+            /* childRect.updatePaths = updatePaths */
             childRect.getCoordinates = getCoordinates
             childRect.getPathString = getPathString
             childRect.addPath = addPath
             childRect.removePath = removePath
             childRect.nodeData = node
+            childRect.group = rg
+            childRect.index = index
 
-            nodes[node.id] = {
+            nodes[child.id] = {
                 rect: childRect,
                 data: node,
             }
@@ -205,6 +240,7 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         })
 
         rg.transform('T' + x + ',' + y)
+        rg.updatePaths = updatePaths
         g.add(rg)
     }
 })
@@ -369,10 +405,12 @@ onMounted(() => {
             })
 
             dagreLayout.edges.forEach((edge) => {
-                let sNode = nodes[edge.source]
-                let tNode = nodes[edge.target]
+                edge.relations.forEach((relation) => {
+                    let sNode = nodes[relation.from]
+                    let tNode = nodes[relation.to]
 
-                sNode.rect.addPath(tNode.rect)
+                    sNode.rect.addPath(tNode.rect)
+                })
             })
 
             clearInterval(timer)
