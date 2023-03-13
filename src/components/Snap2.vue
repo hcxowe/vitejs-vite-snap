@@ -24,18 +24,18 @@ let nodes = {}
 Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
     function dragStart(x, y, e) {
         this.current_transform = this.transform()
-        this.text.current_transform = this.text.transform()
+        //this.text.current_transform = this.text.transform()
     }
 
     function dragMove(dx, dy, x, y, e) {
         this.transform(this.current_transform + 'T' + dx + ',' + dy)
-        this.text.transform(this.text.current_transform + 'T' + dx + ',' + dy)
-        this.updatePaths()
+        //this.text.transform(this.text.current_transform + 'T' + dx + ',' + dy)
+        //this.updatePaths()
     }
 
     function dragEnd(e) {
         this.current_transform = this.transform()
-        this.text.current_transform = this.text.transform()
+        //this.text.current_transform = this.text.transform()
     }
 
     function updatePaths() {
@@ -140,41 +140,65 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         }
     }
 
-    Paper.prototype.childRect = function (x, y, w, h, r, node) {
-        let rect = this.rect(0, 0, w, h, r).transform('T' + x + ',' + y)
-        let text = this.text(100, 32, node.name)
-            .transform('T' + x + ',' + y)
-            .attr({
+    Paper.prototype.childRect = function (x, y, node) {
+        let rg = s.g()
+
+        let titleRect = this.rect(0, 0, 200, 50, 0).attr({
+            fill: '#00ffff',
+            stroke: '#ccc',
+            strokeWidth: 1,
+        })
+
+        let titleText = this.text(100, 32, node.name).attr({
+            width: 196,
+            cursor: 'default',
+            'text-anchor': 'middle',
+        })
+
+        titleRect.mousedown((evt) => {
+            evt.stopPropagation()
+        })
+
+        titleText.mousedown((evt) => {
+            evt.stopPropagation()
+        })
+
+        titleRect.drag(dragMove.bind(rg), dragStart.bind(rg), dragEnd.bind(rg))
+        titleText.drag(dragMove.bind(rg), dragStart.bind(rg), dragEnd.bind(rg))
+
+        rg.add(titleRect)
+        rg.add(titleText)
+
+        node.children.forEach((child, index) => {
+            let childRect = this.rect(0, 50 + index * 30, 200, 30, 0).attr({
+                fill: '#eee',
+                stroke: '#ccc',
+                strokeWidth: 1,
+            })
+
+            let childText = this.text(
+                100,
+                50 + 22 + index * 30,
+                child.name
+            ).attr({
                 width: 196,
                 cursor: 'default',
                 'text-anchor': 'middle',
             })
 
-        rect.paths = {}
-        rect.drag(dragMove, dragStart, dragEnd)
-        rect.updatePaths = updatePaths
-        rect.getCoordinates = getCoordinates
-        rect.getPathString = getPathString
-        rect.addPath = addPath
-        rect.removePath = removePath
+            childRect.paths = {}
+            childRect.updatePaths = updatePaths
+            childRect.getCoordinates = getCoordinates
+            childRect.getPathString = getPathString
+            childRect.addPath = addPath
+            childRect.removePath = removePath
 
-        rect.text = text
-        rect.nodeData = node
-
-        text.drag(dragMove.bind(rect), dragStart.bind(rect), dragEnd.bind(rect))
-
-        rect.mousedown((evt) => {
-            evt.stopPropagation()
+            rg.add(childRect)
+            rg.add(childText)
         })
 
-        text.mousedown((evt) => {
-            evt.stopPropagation()
-        })
-
-        g.add(rect)
-        g.add(text)
-
-        return rect
+        rg.transform('T' + x + ',' + y)
+        g.add(rg)
     }
 })
 
@@ -278,6 +302,47 @@ let data = {
 
 onMounted(() => {
     s = Snap('#svg1')
+    g = s.g()
+
+    let isdown = false
+    let startX = 0
+    let startY = 0
+    let distanX = 0
+    let distanY = 0
+    let moveTransform = ''
+
+    s.mousedown((evt) => {
+        isdown = true
+
+        startX = evt.x
+        startY = evt.y
+
+        moveTransform = g.transform()
+    })
+
+    s.mousemove((evt) => {
+        if (!isdown) {
+            return
+        }
+
+        let disX = evt.x - startX
+        let disY = evt.y - startY
+
+        g.transform(moveTransform + 'T' + disX + ',' + disY)
+    })
+
+    s.mouseup((evt) => {
+        if (!isdown) {
+            return
+        }
+
+        isdown = false
+
+        distanX += evt.x - startX
+        distanY += evt.y - startY
+
+        moveTransform = g.transform()
+    })
 
     const dagreLayout = new DagreLayout({
         type: 'dagre',
@@ -292,59 +357,20 @@ onMounted(() => {
 
     let timer = setInterval(() => {
         if (dagreLayout.nodes && dagreLayout.nodes.length !== 0) {
-            g = s.g().drag()
-
             dagreLayout.nodes.forEach((node) => {
-                let rect = s.childRect(node.x, node.y, 200, 50, 0, node).attr({
-                    fill: '#00ffff',
-                })
+                s.childRect(node.x, node.y, node)
 
-                nodes[node.id] = {
+                /* let rect = s.childRect(node.x, node.y, 200, 50, 0, node).attr({
+                    fill: '#00ffff',
+                }) */
+
+                /* nodes[node.id] = {
                     data: node,
                     rect: rect,
-                }
+                } */
             })
 
             dagreLayout.edges.forEach((edge) => {})
-
-            let isdown = false
-            let startX = 0
-            let startY = 0
-            let distanX = 0
-            let distanY = 0
-            let moveTransform = ''
-            s.mousedown((evt) => {
-                isdown = true
-
-                startX = evt.x
-                startY = evt.y
-
-                moveTransform = g.transform()
-            })
-
-            s.mousemove((evt) => {
-                if (!isdown) {
-                    return
-                }
-
-                let disX = evt.x - startX
-                let disY = evt.y - startY
-
-                g.transform(moveTransform + 'T' + disX + ',' + disY)
-            })
-
-            s.mouseup((evt) => {
-                if (!isdown) {
-                    return
-                }
-
-                isdown = false
-
-                distanX += evt.x - startX
-                distanY += evt.y - startY
-
-                moveTransform = g.transform()
-            })
 
             clearInterval(timer)
         }
