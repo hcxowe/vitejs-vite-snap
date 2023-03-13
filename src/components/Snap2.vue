@@ -61,27 +61,12 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         var slopy, cosy, siny
         var Par = 10.0
         var x3, y3
-        slopy = Math.atan2(0, x1 > x2 ? 10 : -10)
+        slopy = Math.atan2(0, x1 > x2 - 200 ? 10 : -10)
         cosy = Math.cos(slopy)
         siny = Math.sin(slopy)
         //path = 'M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2
-        path =
-            'M' +
-            x1 +
-            ',' +
-            y1 +
-            ' L' +
-            (x1 - 10) +
-            ', ' +
-            y1 +
-            ' L' +
-            (x2 + 10) +
-            ',' +
-            y2 +
-            ' L' +
-            x2 +
-            ',' +
-            y2
+
+        path = 'M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2
         x3 = x2 // Number(x1) + Number(x2)
         y3 = y2 // Number(y1) + Number(y2)
         path += ' M' + x3 + ',' + y3
@@ -108,13 +93,49 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
             ;[p1, p2] = [p2, p1]
         }
 
+        let path
+        let slopy, cosy, siny
+        let Par = 10.0
+        let [x1, y1] = p1
+        let [x2, y2] = p2
+        let x3, y3
+        slopy = Math.atan2(0, p1[0] > p2[0] ? 10 : -10)
+        cosy = Math.cos(slopy)
+        siny = Math.sin(slopy)
+
         if (p1[0] > p2[0]) {
-            p2[0] += 200
-        } else if (p1[0] < p2[0]) {
-            p1[0] += 200
+            x2 += 200
+
+            path = 'M' + x1 + ',' + y1
+            path += ' L' + (x1 - 10) + ',' + y1
+            path += ' L' + (x2 + 10) + ',' + y2
+            path += ' L' + x2 + ',' + y2
+        } else {
+            x1 += 200
+
+            path = 'M' + x1 + ',' + y1
+            path += ' L' + (x1 + 10) + ',' + y1
+            path += ' L' + (x2 - 10) + ',' + y2
+            path += ' L' + x2 + ',' + y2
         }
 
-        return drawLineArrow(p1[0], p1[1], p2[0], p2[1])
+        x3 = x2 // Number(x1) + Number(x2)
+        y3 = y2 // Number(y1) + Number(y2)
+        path += ' M' + x3 + ',' + y3
+        path +=
+            ' L' +
+            (Number(x3) + Number(Par * cosy - (Par / 2.0) * siny)) +
+            ',' +
+            (Number(y3) + Number(Par * siny + (Par / 2.0) * cosy))
+        path +=
+            ' M' +
+            (Number(x3) +
+                Number(Par * cosy + (Par / 2.0) * siny) +
+                ',' +
+                (Number(y3) - Number((Par / 2.0) * cosy - Par * siny)))
+        path += ' L' + x3 + ',' + y3
+
+        return path
     }
 
     function addPath(obj) {
