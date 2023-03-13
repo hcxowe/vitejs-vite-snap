@@ -85,11 +85,11 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         return drawLineArrow(p1[0], p1[1], p2[0], p2[1])
     }
 
-    function addPath(obj) {
+    function addPath(obj, edgeInfo) {
         var id = obj.id
         var path = this.paper
             .path(this.getPathString(obj, 'st'))
-            .attr({ fill: 'none', stroke: 'green', strokeWidth: 1 })
+            .attr({ fill: 'none', stroke: edgeInfo.color, strokeWidth: 1 })
         // path.prependTo(this.paper)
 
         path.hover(
@@ -169,6 +169,32 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
         text.mousedown((evt) => {
             evt.stopPropagation()
         })
+
+        rect.hover(
+            function (evt) {
+                tipWnd
+                    .transform('T' + (evt.x - 32) + ',' + (evt.y - 87))
+                    .animate(
+                        {
+                            opacity: 1,
+                        },
+                        1000
+                    )
+            },
+            function (evt) {
+                tipWnd
+                    .attr({
+                        x: evt.x,
+                        y: evt.y,
+                    })
+                    .animate(
+                        {
+                            opacity: 0,
+                        },
+                        400
+                    )
+            }
+        )
 
         g.add(rect)
         g.add(text)
@@ -260,58 +286,70 @@ let data = {
         {
             source: '100',
             target: '0',
+            color: 'blue',
         },
         {
             source: '101',
             target: '0',
+            color: 'red',
         },
         {
             source: '102',
             target: '0',
+            color: '#faad14',
         },
         {
             source: '103',
             target: '0',
+            color: '#ff7875',
         },
         {
             source: '103',
             target: '102',
+            color: '#64a7c7',
         },
         {
             source: '0',
             target: '1',
+            color: '#b164c7',
         },
         {
             source: '0',
             target: '2',
+            color: '#9d4534',
         },
         {
             source: '0',
             target: '3',
+            color: '#ff7875',
         },
         {
             source: '0',
             target: '4',
+            color: '#faad14',
         },
         {
             source: '4',
             target: '3',
+            color: '#64a7c7',
         },
 
         {
             source: '3',
             target: '100',
+            color: '#b164c7',
         },
 
         {
             source: '2',
             target: '4',
+            color: '#ff7875',
         },
     ],
 }
 
 let nodes = {}
-
+let tipWnd = null
 onMounted(() => {
     s = Snap('#svg')
 
@@ -347,7 +385,7 @@ onMounted(() => {
                 let sNode = nodes[edge.source]
                 let tNode = nodes[edge.target]
 
-                sNode.rect.addPath(tNode.rect)
+                sNode.rect.addPath(tNode.rect, edge)
             })
 
             let isdown = false
@@ -388,6 +426,26 @@ onMounted(() => {
 
                 moveTransform = g.transform()
             })
+
+            tipWnd = s.g()
+            let tipRect = s.rect(0, 0, 180, 80, 10).attr({
+                stroke: '#ccc',
+                fill: 'white',
+                opacity: '0.6',
+            })
+
+            let tipText1 = s.text(10, 30, '需求层级：STS')
+            let tipText2 = s.text(10, 60, '负责人：张三')
+
+            tipWnd.add(tipRect)
+            tipWnd.add(tipText1)
+            tipWnd.add(tipText2)
+
+            tipWnd.attr({
+                opacity: 0,
+            })
+
+            g.add(tipWnd)
 
             clearInterval(timer)
         }
