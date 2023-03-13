@@ -173,7 +173,7 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
             console.log(this.nodeData, obj.nodeData)
         })
 
-        g.add(path)
+        g.prepend(path)
 
         this.paths[id] = [path, obj, 'st']
         obj.paths[this.id] = [path, this, 'ts']
