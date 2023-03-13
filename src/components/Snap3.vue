@@ -172,14 +172,13 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
 
         rect.hover(
             function (evt) {
-                tipWnd
-                    .transform('T' + (evt.x - 32) + ',' + (evt.y - 87))
-                    .animate(
-                        {
-                            opacity: 1,
-                        },
-                        1000
-                    )
+                let [x, y] = this.getCoordinates()
+                tipWnd.transform('T' + x + ',' + y).animate(
+                    {
+                        opacity: 1,
+                    },
+                    1000
+                )
             },
             function (evt) {
                 tipWnd
