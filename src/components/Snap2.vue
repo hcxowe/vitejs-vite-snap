@@ -24,32 +24,29 @@ let nodes = {}
 Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
     function dragStart(x, y, e) {
         this.current_transform = this.transform()
-        //this.text.current_transform = this.text.transform()
     }
 
     function dragMove(dx, dy, x, y, e) {
         this.transform(this.current_transform + 'T' + dx + ',' + dy)
-        //this.text.transform(this.text.current_transform + 'T' + dx + ',' + dy)
-        //this.updatePaths()
+
+        this.updatePaths()
     }
 
     function dragEnd(e) {
         this.current_transform = this.transform()
-        //this.text.current_transform = this.text.transform()
     }
 
     function updatePaths() {
-        var key
-        for (key in this.paths) {
-            this.paths[key][0].attr({
-                path: this.getPathString(
-                    this.paths[key][1],
-                    this.paths[key][2]
-                ),
-            })
-
-            //this.paths[key][0].prependTo(this.paper)
-        }
+        this.rect.forEach((rect) => {
+            for (let key in rect.paths) {
+                rect.paths[key][0].attr({
+                    path: rect.getPathString(
+                        rect.paths[key][1],
+                        rect.paths[key][2]
+                    ),
+                })
+            }
+        })
     }
 
     function getCoordinates() {
@@ -143,6 +140,8 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
     Paper.prototype.childRect = function (x, y, node) {
         let rg = s.g()
 
+        rg.rect = []
+
         let titleRect = this.rect(0, 0, 200, 50, 0).attr({
             fill: '#00ffff',
             stroke: '#ccc',
@@ -192,9 +191,17 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
             childRect.getPathString = getPathString
             childRect.addPath = addPath
             childRect.removePath = removePath
+            childRect.nodeData = node
+
+            nodes[node.id] = {
+                rect: childRect,
+                data: node,
+            }
 
             rg.add(childRect)
             rg.add(childText)
+
+            rg.rect.push(childRect)
         })
 
         rg.transform('T' + x + ',' + y)
@@ -359,18 +366,14 @@ onMounted(() => {
         if (dagreLayout.nodes && dagreLayout.nodes.length !== 0) {
             dagreLayout.nodes.forEach((node) => {
                 s.childRect(node.x, node.y, node)
-
-                /* let rect = s.childRect(node.x, node.y, 200, 50, 0, node).attr({
-                    fill: '#00ffff',
-                }) */
-
-                /* nodes[node.id] = {
-                    data: node,
-                    rect: rect,
-                } */
             })
 
-            dagreLayout.edges.forEach((edge) => {})
+            dagreLayout.edges.forEach((edge) => {
+                let sNode = nodes[edge.source]
+                let tNode = nodes[edge.target]
+
+                sNode.rect.addPath(tNode.rect)
+            })
 
             clearInterval(timer)
         }
