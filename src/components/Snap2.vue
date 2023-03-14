@@ -144,24 +144,14 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
             .path(this.getPathString(obj, 'st'))
             .attr({ fill: 'none', stroke: 'green', strokeWidth: 1 })
 
-        path.hover(
-            function () {
-                this.animate(
-                    {
-                        strokeWidth: 2,
-                    },
-                    300
-                )
-            },
-            function () {
-                this.animate(
-                    {
-                        strokeWidth: 1,
-                    },
-                    300
-                )
-            }
-        )
+        path.click(function () {
+            this.animate(
+                {
+                    strokeWidth: 2,
+                },
+                300
+            )
+        })
 
         let title = Snap.parse(
             `<title>${this.nodeData.name + ' -> ' + obj.nodeData.name}</title>`

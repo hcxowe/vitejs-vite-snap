@@ -19,6 +19,14 @@ import { DagreLayout } from '@antv/layout'
 
 let s = null
 let g = null
+let nodes = {}
+let tipWnd = null
+
+let selPathObj = {
+    path: null,
+    sRect: null,
+    tRect: null,
+}
 
 Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
     function dragStart(x, y, e) {
@@ -92,27 +100,36 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
             .attr({ fill: 'none', stroke: edgeInfo.color, strokeWidth: 1 })
         // path.prependTo(this.paper)
 
-        path.hover(
-            function () {
-                this.animate(
-                    {
-                        strokeWidth: 2,
-                    },
-                    300
-                )
-            },
-            function () {
-                this.animate(
-                    {
-                        strokeWidth: 1,
-                    },
-                    300
-                )
-            }
-        )
+        let that = this
+        path.click(function () {
+            selPathObj.path && selPathObj.path.attr({ strokeWidth: 1 })
+            selPathObj.sRect && selPathObj.sRect.attr({ fill: '#00ffff' })
+            selPathObj.tRect && selPathObj.tRect.attr({ fill: '#00ffff' })
+
+            this.animate(
+                {
+                    strokeWidth: 2,
+                },
+                300
+            )
+
+            that.attr({
+                fill: 'red',
+            })
+
+            obj.attr({
+                fill: 'red',
+            })
+
+            selPathObj.path = this
+            selPathObj.sRect = that
+            selPathObj.tRect = obj
+        })
 
         let title = Snap.parse(
-            `<title>${this.nodeData.name + ' -> ' + obj.nodeData.name}</title>`
+            `<title>${
+                this.nodeData.name + ' -- 满足 --> ' + obj.nodeData.name
+            }</title>`
         )
 
         path.append(title)
@@ -164,6 +181,18 @@ Snap.plugin(function (Snap, Element, Paper, global, Fragment) {
 
         rect.mousedown((evt) => {
             evt.stopPropagation()
+
+            tipWnd
+                .attr({
+                    x: evt.x,
+                    y: evt.y,
+                })
+                .animate(
+                    {
+                        opacity: 0,
+                    },
+                    400
+                )
         })
 
         text.mousedown((evt) => {
@@ -347,8 +376,6 @@ let data = {
     ],
 }
 
-let nodes = {}
-let tipWnd = null
 onMounted(() => {
     s = Snap('#svg')
 

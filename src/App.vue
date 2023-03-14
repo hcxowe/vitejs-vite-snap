@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import Snap from './components/Snap3.vue'
 import Snap1 from './components/Snap2.vue'
 
-const type = ref(2)
+const type = ref(1)
 </script>
 <style>
 #app {
